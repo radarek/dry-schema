@@ -40,7 +40,6 @@ module Dry
       def validate_path(key_paths, path)
         if path[INDEX_REGEX]
           key = path.gsub(INDEX_REGEX, BRACKETS)
-
           if none_key_paths_match?(key_paths, key)
             arr = path.gsub(INDEX_REGEX) { ".#{_1[1]}" }
             arr.split(DOT).map { DIGIT_REGEX.match?(_1) ? Integer(_1, 10) : _1.to_sym }
@@ -51,11 +50,23 @@ module Dry
       end
 
       def none_key_paths_match?(key_paths, path)
-        !key_paths.bsearch do |key_path|
-          path_size = path.size
-          match = key_path.start_with?(path) && (key_path.size == path_size || key_path[path_size] == DOT || key_path[path_size, 2] == BRACKETS)
-          match ? 0 : path <=> key_path
+        !any_key_paths_match?(key_paths, path)
+      end
+
+      def any_key_paths_match?(key_paths, path)
+        find_path(key_paths, path, true) || find_path(key_paths, path + DOT, false) || find_path(key_paths, path + BRACKETS, false)
+        # !key_paths.bsearch do |key_path|
+        #   path_size = path.size
+        #   match = key_path.start_with?(path) && (key_path.size == path_size || key_path[path_size] == DOT || key_path[path_size, 2] == BRACKETS)
+        #   match ? 0 : path <=> key_path
+        # end
+      end
+
+      def find_path(key_paths, path, check)
+        key = key_paths.bsearch do |key_path|
+          key_path >= path
         end
+        check ? key == path : key&.start_with?(path)
       end
 
       # @api private
