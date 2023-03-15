@@ -167,4 +167,19 @@ RSpec.describe Dry::Schema, "unexpected keys" do
         .to eql({unexpected_key: ["is not allowed"]})
     end
   end
+
+  context "with binary searching" do
+    it "copies key map from the parent and includes new keys from child" do
+      schema = Dry::Schema.Params do
+        config.validate_keys = true
+
+        required(:aaa).filled(:string)
+        required(:fooA).filled(:string)
+        required(:foo).filled(:string)
+      end
+
+      expect(schema.(aaa: "string", fooA: "string", foo: "string").errors.to_h)
+        .to eql({})
+    end
+  end
 end

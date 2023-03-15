@@ -41,27 +41,24 @@ module Dry
         if path[INDEX_REGEX]
           key = path.gsub(INDEX_REGEX, BRACKETS)
 
-          if none_key_paths_match?(key_paths, key)
+          if !any_key_paths_match?(key_paths, key)
             arr = path.gsub(INDEX_REGEX) { ".#{_1[1]}" }
             arr.split(DOT).map { DIGIT_REGEX.match?(_1) ? Integer(_1, 10) : _1.to_sym }
           end
-        elsif none_key_paths_match?(key_paths, path)
+        elsif !any_key_paths_match?(key_paths, path)
           path
         end
       end
 
-      def none_key_paths_match?(key_paths, path)
-        !key_paths.bsearch do |key_path|
-          path_size = path.size
-          match = key_path.start_with?(path) && (key_path.size == path_size || key_path[path_size] == DOT || key_path[path_size, 2] == BRACKETS)
-          match ? 0 : path <=> key_path
-        end
+      # @api private
+      def any_key_paths_match?(key_paths, path)
+        (find_min_prefixed_key(key_paths, path) == path) || find_min_prefixed_key(key_paths, path + DOT) || find_min_prefixed_key(key_paths, path + BRACKETS)
       end
 
       # @api private
-      def paths_match?(input_path, key_path)
-        residue = key_path.sub(input_path, "")
-        residue.empty? || residue.start_with?(DOT, BRACKETS)
+      def find_min_prefixed_key(key_paths, prefix_path)
+        candidate = key_paths.bsearch { |key_path| key_path >= prefix_path }
+        candidate if candidate&.start_with?(prefix_path)
       end
 
       # @api private
